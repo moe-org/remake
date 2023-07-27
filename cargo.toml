@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "remake-lib",
+    "remake"
+]
+
