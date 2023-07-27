@@ -1,33 +1,34 @@
-use crate::format::Target;
-use std::sync::Arc;
-
 use self::scheduler::LazyTargetSchedler;
+use crate::format::Target;
 use ahash::AHashMap;
+use std::{borrow::BorrowMut, sync::Arc};
+use std::cell::RefCell;
+
 pub mod scheduler;
 
-
-pub struct Executer<'a>{
-    pub thread_count:i32,
-    pub all_targets:AHashMap<&'a str,&'a Target<'a>>,
-    targets_scheduler:Arc<dyn scheduler::TargetScheduler<'a>>
+pub struct Executer<'a> {
+    pub thread_count: i32,
+    pub all_targets: Arc<AHashMap<&'a str, &'a Target<'a>>>,
+    targets_scheduler: Box<dyn scheduler::TargetScheduler<'a> + 'a>,
 }
 
-impl<'a> Executer<'a>{
-    pub fn new(count:i32,all_targets:AHashMap<&'a str,&'a Target<'a>>) -> Executer<'a>{
-        return Executer{
-            thread_count:count,
-            all_targets:all_targets.clone(),
-            targets_scheduler:Arc::new(LazyTargetSchedler::new(all_targets))
+impl<'a> Executer<'a> {
+    pub fn new(count: i32, targets: AHashMap<&'a str, &'a Target<'a>>) -> Executer<'a> {
+        let arc = Arc::new(targets);
+        Executer::<'a> {
+            thread_count: count,
+            targets_scheduler: Box::new(LazyTargetSchedler::<'a>::new(arc.clone())),
+            all_targets: arc,
         }
     }
 
-    pub fn execute(&'a mut self,targets:&'a [&'a Target<'a>]) -> Result<(),()>{
-        for target in targets{
-            Arc::get_mut(&mut self.targets_scheduler).unwrap().target(target);
+    pub fn execute(&'a mut self, targets: &Vec<String>) -> Result<(), ()> {
+        for target in targets {
+            (*self.targets_scheduler).borrow_mut().scheduler.target(target);
         }
-        
 
         return Ok(());
     }
 }
+
 

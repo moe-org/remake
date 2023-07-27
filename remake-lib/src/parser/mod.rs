@@ -1,6 +1,1 @@
-
-pub struct ParseOption{
-
-}
-
-
+pub struct ParseOption {}
