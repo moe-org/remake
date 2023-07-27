@@ -2,7 +2,6 @@ use self::scheduler::LazyTargetSchedler;
 use crate::format::Target;
 use ahash::AHashMap;
 use std::{borrow::BorrowMut, sync::Arc};
-use std::cell::RefCell;
 
 pub mod scheduler;
 
@@ -24,11 +23,9 @@ impl<'a> Executer<'a> {
 
     pub fn execute(&'a mut self, targets: &Vec<String>) -> Result<(), ()> {
         for target in targets {
-            (*self.targets_scheduler).borrow_mut().scheduler.target(target);
+            (*self.targets_scheduler).borrow_mut().target(target);
         }
 
         return Ok(());
     }
 }
-
-
