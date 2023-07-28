@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 remake-lib = {path="../remake-lib"}
+clap = { version = "4.3.19", features = ["derive","unicode"] }
