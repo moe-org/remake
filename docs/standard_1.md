@@ -73,7 +73,7 @@ Content:
 | File-Header | (`remake` ASCII)Byte Sequence |
 | Platform | u64 |
 | Version | u64 |
-| Targets | Array<Target> |
+| Targets | `Array<Target>` |
 
 
 The target:
