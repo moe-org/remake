@@ -1,4 +1,3 @@
-use crate::errors::RuntimeError;
 use crate::format::Target;
 use ahash::AHashMap;
 use std::sync::Arc;
@@ -13,6 +12,8 @@ pub mod scheduler;
 pub struct Executer {
     pub thread_count: u32,
     pub all_targets: Arc<AHashMap<Arc<String>, Arc<Target>>>,
+    /// If you want to print some useful message to user,set this.
+    pub logger: Arc<dyn Fn(&str) -> () + Sync + Send>,
     targets_scheduler: scheduler::TargetScheduler,
 }
 
@@ -23,36 +24,53 @@ impl Executer {
         Executer {
             thread_count: count,
             targets_scheduler: TargetScheduler::new(arc.clone()),
+            logger: Arc::new(|_| -> () { () }),
             all_targets: arc,
         }
     }
 
     /// Parse the dependences of the targets and execute them at a sequence.
-    pub fn execute(&mut self, targets: &Vec<String>) -> spin::Mutex<Vec<RuntimeError>> {
+    pub fn execute(&mut self, targets: &Vec<String>) -> spin::Mutex<Vec<String>> {
         // resolve targets
         for target in targets {
             self.targets_scheduler.target(target);
         }
-        let errors: spin::Mutex<Vec<RuntimeError>> =
+        let errors: spin::Mutex<Vec<String>> =
             spin::Mutex::new(Vec::with_capacity(self.thread_count as usize));
-        let dur = Duration::from_millis(100);
+        let dur = Duration::from_millis(10);
 
         // begin to work
         thread::scope(|s| {
             let mut threads: Vec<thread::ScopedJoinHandle<_>> = Vec::new();
-            let scheduler: &mut TargetScheduler = &mut self.targets_scheduler;
+            let scheduler = &self.targets_scheduler;
 
             for _ in 0..self.thread_count {
                 let j = s.spawn(|| {
-                    let target = scheduler.get_next_target();
+                    let id = thread::current().id();
+                    loop {
+                        let target = scheduler.get_next_target();
 
-                    match target {
-                        None => {
-                            return ();
-                        }
-                        Some(target) => {
-                            for command in target.commands.iter() {
-                                command.run().unwrap();
+                        match target {
+                            None => {
+                                return {
+                                    (*self.logger)(format!("Thread {} Exit", id.as_u64()).as_str());
+                                }
+                            }
+                            Some(target) => {
+                                for command in target.commands.iter() {
+                                    let run = command.run();
+
+                                    if run.is_err() {
+                                        scheduler.report_error();
+                                        errors.lock().push(run.err().unwrap().to_string());
+                                    }
+                                }
+                                scheduler.done_target(target.name.clone());
+
+                                (*self.logger)(
+                                    format!("Thread {} Executed {}", id.as_u64(), target.name)
+                                        .as_str(),
+                                );
                             }
                         }
                     }

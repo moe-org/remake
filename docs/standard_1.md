@@ -12,7 +12,7 @@ All numbers are **little endian**.
 
 A boolean(or bool) means "u8". When its value is 0,it is false. Otherwise it is true.
 
-All strings are a struct. As:
+All strings are structs. As:
 ```c
 struct String{
     u64 StringLengthInByte;
@@ -63,7 +63,7 @@ struct Map<KEY,VALUE>{
 Let's go.
 
 ## The File Format
-The file starts with byte consequence [72 65 6d 61 6b 65]\(Hex\), means "remake" in ASCII.
+The file starts with byte sequence [72 65 6d 61 6b 65]\(Hex\), means "remake" in ASCII.
 
 As:
 

@@ -1,3 +1,4 @@
+use std::sync::Arc;
 
 use clap::Parser;
 
@@ -6,11 +7,11 @@ use clap::Parser;
 struct Args {
     /// File to be read and executed.
     #[arg(short, long)]
-    file : String,
+    file: String,
 
     /// Name of targets to be executed.
     #[arg(short, long)]
-    targets : Vec<String>,
+    targets: Vec<String>,
 
     /// How many threads we should use.
     #[arg(short, long, default_value_t = 1)]
@@ -27,31 +28,38 @@ fn main() {
 
     let ret = remake_lib::parser::parse_from_bytes(bytes);
 
-    if ret.is_err(){
-        eprintln!("Failed to parse the `{}`:{}", &args.file,ret.err().unwrap());
+    if ret.is_err() {
+        eprintln!(
+            "Failed to parse the `{}`:{}",
+            &args.file,
+            ret.err().unwrap()
+        );
         std::process::exit(1);
     }
 
     let ret = ret.unwrap();
 
-    let mut executer = remake_lib::executer::Executer::new(args.jobs,ret.targets);
+    let mut executer = remake_lib::executer::Executer::new(args.jobs, ret.targets);
 
-    let executed =    executer.execute(&args.targets);
+    executer.logger = Arc::new(|msg| -> () {
+        println!("{}", msg);
+        ()
+    });
 
-    let errors =  executed.lock();
+    let executed = executer.execute(&args.targets);
+
+    let errors = executed.lock();
 
     // time end
 
-    if errors.len() != 0{
+    if errors.len() != 0 {
         for error in errors.iter() {
-            eprintln!("Runtime Error:{}",error)
+            eprintln!("Runtime Error:{}", error)
         }
-    }
-    else{
+    } else {
         println!("Finished")
     }
 
     let used = now.elapsed();
-    println!("Cost {}s {}ms",used.as_secs(),used.subsec_millis());
-
+    println!("Cost {}s {}ms", used.as_secs(), used.subsec_millis());
 }

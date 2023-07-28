@@ -1,4 +1,3 @@
-
 /// The platforam code.
 #[repr(u64)]
 pub enum Platform {

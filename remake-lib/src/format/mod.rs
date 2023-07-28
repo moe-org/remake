@@ -2,7 +2,7 @@ pub mod definition;
 
 use crate::errors::RuntimeError;
 use ahash::AHashMap;
-use std::{sync::atomic::AtomicBool, sync::RwLock,sync::Arc, ffi::OsStr};
+use std::{ffi::OsStr, sync::atomic::AtomicBool, sync::Arc, sync::RwLock};
 
 /// This stand for a target.
 /// A target contains its name,dependences and commands.
@@ -44,7 +44,7 @@ impl Command {
 
         let envs = self.environments.read().unwrap();
 
-        for env in envs.iter(){
+        for env in envs.iter() {
             command.env(OsStr::new(env.0.as_str()), OsStr::new(env.1.as_str()));
         }
 
@@ -78,7 +78,7 @@ impl Command {
                         }
                         Err(err) => {
                             return Err(RuntimeError {
-                                source: Some(Box::new(err)),
+                                source: Some(Arc::new(err)),
                                 command: Some(format!("{} {:#?}", self.executable, self.arguments)),
                                 reason: Some(String::from("can not execute the program")),
                             });
@@ -88,7 +88,7 @@ impl Command {
             }
             Err(err) => {
                 return Err(RuntimeError {
-                    source: Some(Box::new(err)),
+                    source: Some(Arc::new(err)),
                     command: Some(format!("{} {:#?}", self.executable, self.arguments)),
                     reason: Some(String::from("can not start the program")),
                 })
@@ -100,11 +100,11 @@ impl Command {
 impl CommandsRunable {
     /// Execute all the commands
     pub fn run(&self) -> Result<(), RuntimeError> {
-            let result = self.command.run();
+        let result = self.command.run();
 
-            if result.is_err() {
-                return result;
-            }
+        if result.is_err() {
+            return result;
+        }
 
         return Ok(());
     }

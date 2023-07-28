@@ -15,6 +15,7 @@ pub struct TargetScheduler {
     unresolved_targets: spin::Mutex<Vec<Arc<Target>>>,
     done_targets: spin::Mutex<AHashSet<Arc<String>>>,
     done: AtomicBool,
+    error: AtomicBool,
 }
 
 impl TargetScheduler {
@@ -63,11 +64,16 @@ impl TargetScheduler {
             unresolved_targets: spin::Mutex::new(Vec::with_capacity(32)),
             done_targets: spin::Mutex::new(AHashSet::with_capacity(32)),
             done: AtomicBool::new(false),
+            error: AtomicBool::new(false),
         }
     }
 
     /// Get the next target that will be executed.
     pub fn get_next_target(&self) -> Option<Arc<Target>> {
+        if self.is_done() {
+            return None;
+        }
+
         let mut todos = self.todo_targets.lock();
         let dones = self.done_targets.lock();
         let mut got = self.get_runable_target(&todos, &dones);
@@ -87,15 +93,19 @@ impl TargetScheduler {
         return Some(got.unwrap());
     }
 
-    /// Mark a target was executed. 
-    pub fn done_target(&mut self, target: Arc<String>) {
+    pub fn report_error(&self) {
+        self.error.store(true, Ordering::SeqCst);
+    }
+
+    /// Mark a target was executed.
+    pub fn done_target(&self, target: Arc<String>) {
         let mut dones = self.done_targets.lock();
         dones.insert(target);
     }
 
-    /// Detect if all the targets were get.
+    /// Detect if all the targets were get. Or there is a break.
     pub fn is_done(&self) -> bool {
-        return self.done.load(Ordering::Relaxed);
+        return self.done.load(Ordering::SeqCst) || self.error.load(Ordering::SeqCst);
     }
 
     /// Mark a target that you want to execute.

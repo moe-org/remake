@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fmt;
+use std::sync::Arc;
 
 /// A error,throw it when parse format
 #[derive(Debug)]
@@ -65,7 +66,7 @@ impl Error for ParseError {
 /// An runtime error,throw it when execute.
 #[derive(Debug)]
 pub struct RuntimeError {
-    pub source: Option<Box<dyn Error>>,
+    pub source: Option<Arc<dyn Error>>,
     pub command: Option<String>,
     pub reason: Option<String>,
 }
