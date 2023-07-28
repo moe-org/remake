@@ -95,3 +95,38 @@ struct Command{
     String WorkingDirectory;
 }
 ```
+
+## Definition
+```c
+enum Platform{
+    Window = 0,
+    Unix = 1,
+    Mac = 2,
+    Freebsd = 3,
+}
+```
+
+## Rule
+
+Current version is `0`(u64).
+
+If the version or platform in file is not match with the current, 
+the targets should not be executed.
+
+
+For target:
+
+When execute a target,its dependences must be executed successfully before.
+If a target generate a error,remake should not execute any new target.
+Just finishing the target that has begun and exit.
+
+
+For command:
+
+If the command does not exit with zero value.(Inlucde other errors,such as IOError)
+The command should generate a error.
+
+But,if `IgnoreErrors` is true. The command won't generate any error.
+
+If a command generated a error. The rest command in the array should not be executed.
+And the target should generate a error.

@@ -4,16 +4,16 @@ use crate::errors::RuntimeError;
 use ahash::AHashMap;
 use std::{ffi::OsStr, sync::atomic::AtomicBool, sync::Arc, sync::RwLock};
 
-/// This stand for a target.
+/// This stands for a target.
 /// A target contains its name,dependences and commands.
-/// The dependences is also a name refer to another target.
+/// The dependence is also a name refer to another target.
 pub struct Target {
     pub name: Arc<String>,
     pub dependences: Arc<Vec<String>>,
     pub commands: Arc<Vec<CommandsRunable>>,
 }
 
-/// This stand for a command that will be executed.
+/// This stands for a command that will be executed.
 pub struct Command {
     /// The executable file path
     pub executable: Arc<String>,
